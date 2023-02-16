@@ -32,8 +32,34 @@ defmodule Numerus.Formatter do
   alias Numerus.Classifier, as: Classifier
 
   # -- module attributes -- #
+  @normal_format  :e164
 
   # -- format functions  -- #
+
+  @doc """
+  Normalize the did into the supplied normalization format. If no format is
+  provided when called, @normal_format is used.
+
+  Example:
+  ```elixir
+  iex> Numerus.Formatter.normalize("2065551212")
+  "+12065551212"
+
+  iex> Numerus.Formatter.normalize("12065551212")
+  "+12065551212"
+  ```
+  """
+  @spec normalize(did :: bitstring, format :: atom() | nil) :: bitstring() | {:error, :invalid_format}
+  def normalize(did, format) do
+    case format do
+      :e164     -> to_e164(did)
+      :npan     -> to_npan(did)
+      :one_npan -> to_1npan(did)
+      _         -> {:error, :invalid_format}
+    end
+  end
+
+  def normalize(did), do: normalize(did, @normal_format)
 
   @doc """
   Pretty format a telephone number. For NADP numbers. Other numbers will
