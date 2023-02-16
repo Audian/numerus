@@ -23,6 +23,7 @@
 defmodule NumerusTest do
   use ExUnit.Case
   doctest Numerus.Classifier
+  doctest Numerus.Formatter
 
   require Logger
 
