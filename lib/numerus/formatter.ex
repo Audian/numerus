@@ -55,6 +55,7 @@ defmodule Numerus.Formatter do
       :e164     -> to_e164(did)
       :npan     -> to_npan(did)
       :one_npan -> to_1npan(did)
+      :us_intl  -> to_usintl(did)
       _         -> {:error, :invalid_format}
     end
   end
@@ -164,6 +165,25 @@ defmodule Numerus.Formatter do
     end
   end
   def to_1npan(_), do: :error
+
+  @doc """
+  Convert the supplied did to us intl format.
+  """
+  @spec to_usintl(did :: bitstring()) :: bitstring() | :error
+  def to_usintl(did) when is_bitstring(did) do
+    case Classifier.classify(did) do
+      {:ok, %{"region" => region, "format" => format}} ->
+        case region do
+          :nadp   -> :error
+          :world  ->
+            case format do
+              :us_intl  -> did
+              :e164     -> String.replace(did, ~r/\+/, "011")
+            end
+        end
+    end
+  end
+  def to_usintl(_), do: :error
 
   # -- format  functions -- #
 end
