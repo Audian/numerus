@@ -64,12 +64,6 @@ defmodule Numerus.Classifier do
   """
   @spec classify(did :: bitstring()) :: {:ok, map()} | {:error, term()}
   def classify(did) when is_bitstring(did) do
-    # get the region for this did, :nadp, or :world
-    region = case is_nadp?(did) do
-      true  -> :nadp
-      false -> :world
-    end
-
     # get the formatting
     format =
       cond do
@@ -80,6 +74,18 @@ defmodule Numerus.Classifier do
         is_usintl?(did)     -> :us_intl
         true                -> :unknown
       end
+
+    # get the region for this did, :nadp, or :world
+    region = case is_nadp?(did) do
+      true  -> :nadp
+      false -> case String.match?(did, @intl_n) or String.match?(did, @intl) do
+        true  -> :world
+        false -> case format do
+          :shortcode  -> :nadp
+          _           -> :unknown
+        end
+      end
+    end
 
     classification = %{"region" => region, "format" => format}
     {:ok, classification}
