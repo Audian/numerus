@@ -48,6 +48,8 @@ defmodule Numerus.Classifier do
   @npan     ~r/\A^[2-9][0-9]{2}[2-9][0-9]{6}$\z/
   @one_npan ~r/\A^1[2-9][0-9]{2}[2-9][0-9]{6}$\z/
 
+  @n11      ~r/\A^[2-9]11$\z/
+
   # parser regex
   # this regex splits the full did into country code + number
   @parser   ~r/(\+|011)(?<countrycode>9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d|2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)(?<number>\d{1,14})$/i
@@ -67,6 +69,7 @@ defmodule Numerus.Classifier do
     # get the formatting
     format =
       cond do
+        is_n11?(did)        -> :n11
         is_e164?(did)       -> :e164
         is_1npan?(did)      -> :one_npan
         is_npan?(did)       -> :npan
@@ -82,6 +85,7 @@ defmodule Numerus.Classifier do
         true  -> :world
         false -> case format do
           :shortcode  -> :nadp
+          :n11        -> :nadp
           _           -> :unknown
         end
       end
@@ -92,7 +96,27 @@ defmodule Numerus.Classifier do
   end
   def classify(_), do: {:error, :invalid_number}
 
-  # -- did testing functions -- #
+  # -- did classification functions -- #
+  @doc """
+  Return true if the did is an NXX dialing code. The NXX codes are part of
+  the North American Dial Plan used for special local services.
+
+  The services are:
+  211 - Community Services
+  311 - Municipal Government Services
+  411 - Directory Information
+  511 - Traffic Information
+  611 - Telco customer service and repair
+  711 - TDD and Relay
+  811 - Public Utility location
+  911 - Emergency services
+  """
+  @spec is_n11?(did :: bitstring()) :: boolean()
+  def is_n11?(did) when is_bitstring(did) do
+    String.match?(did, @n11)
+  end
+  def is_n11?(_), do: false
+
   @doc """
   Returns true if the supplied did belongs to the North American Dial Plan.
   """
