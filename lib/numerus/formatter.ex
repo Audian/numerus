@@ -78,6 +78,7 @@ defmodule Numerus.Formatter do
             end
         end
       _           -> {:error, :invalid_format}
+      _           -> {:error, :invalid_format}
     end
   end
 
