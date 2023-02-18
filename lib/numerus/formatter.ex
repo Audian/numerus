@@ -74,11 +74,11 @@ defmodule Numerus.Formatter do
           {:ok, %{"region" => _, "format" => format}} ->
             case format do
               :shortcode  -> did
+              :n11        -> did
               _           -> {:error, :invalid_format}
             end
         end
-      _           -> {:error, :invalid_format}
-      _           -> {:error, :invalid_format}
+        _ -> {:error, :invalid_format}
     end
   end
 
@@ -87,7 +87,7 @@ defmodule Numerus.Formatter do
   def normalize(did) when is_bitstring(did) do
     case Classifier.classify(did) do
       {:ok, %{"region" => _, "format" => format}} ->
-        if format == :shortcode do
+        if format == :shortcode or format == :n11 do
           did
         else
           normalize(did, @normal_format)
