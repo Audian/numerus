@@ -38,7 +38,8 @@ defmodule Numerus.Formatter do
 
   @doc """
   Normalize the did into the supplied normalization format. If no format is
-  provided when called, @normal_format is used.
+  provided when called, @normal_format is used. Shortcodes passed to the
+  converter will always return the shortcode as-is.
 
   Example:
   ```elixir
@@ -52,11 +53,12 @@ defmodule Numerus.Formatter do
   @spec normalize(did :: bitstring, format :: atom() | nil) :: bitstring() | {:error, :invalid_format}
   def normalize(did, format) do
     case format do
-      :e164     -> to_e164(did)
-      :npan     -> to_npan(did)
-      :one_npan -> to_1npan(did)
-      :us_intl  -> to_usintl(did)
-      _         -> {:error, :invalid_format}
+      :e164       -> to_e164(did)
+      :npan       -> to_npan(did)
+      :one_npan   -> to_1npan(did)
+      :us_intl    -> to_usintl(did)
+      :shortcode  -> did
+      _           -> {:error, :invalid_format}
     end
   end
 
