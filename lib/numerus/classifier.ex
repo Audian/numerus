@@ -54,6 +54,18 @@ defmodule Numerus.Classifier do
   # this regex splits the full did into country code + number
   @parser   ~r/(\+|011)(?<countrycode>9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d|2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)(?<number>\d{1,14})$/i
 
+  # nadp n11 classification
+  @n11_dids %{
+    "211" => "Community Services",
+    "311" => "Municipal Government Services",
+    "411" => "Directory Information",
+    "511" => "Traffic Information",
+    "611" => "Telco Customer Service & Repair",
+    "711" => "TDD and Relay",
+    "811" => "Public Utility Location",
+    "911" => "Emergency Services"
+  }
+
   # -- public functions  -- #
 
   @doc """
@@ -66,32 +78,12 @@ defmodule Numerus.Classifier do
   """
   @spec classify(did :: bitstring()) :: {:ok, map()} | {:error, term()}
   def classify(did) when is_bitstring(did) do
-    # get the formatting
-    format =
-      cond do
-        is_n11?(did)        -> :n11
-        is_e164?(did)       -> :e164
-        is_1npan?(did)      -> :one_npan
-        is_npan?(did)       -> :npan
-        is_shortcode?(did)  -> :shortcode
-        is_usintl?(did)     -> :us_intl
-        true                -> :unknown
-      end
+    classification = %{
+      "region"    => region(did),
+      "format"    => format(did),
+      "tollstate" => tollstate(did)
+    }
 
-    # get the region for this did, :nadp, or :world
-    region = case is_nadp?(did) do
-      true  -> :nadp
-      false -> case String.match?(did, @intl_n) or String.match?(did, @intl) do
-        true  -> :world
-        false -> case format do
-          :shortcode  -> :nadp
-          :n11        -> :nadp
-          _           -> :unknown
-        end
-      end
-    end
-
-    classification = %{"region" => region, "format" => format}
     {:ok, classification}
   end
   def classify(_), do: {:error, :invalid_number}
@@ -315,4 +307,46 @@ defmodule Numerus.Classifier do
     end
   end
   def metadata(_), do: {:error, :invalid_number}
+
+  # -- private functions -- #
+
+  # determine region for the supplied did
+  @spec region(did :: bitstring()) :: atom()
+  defp region(did) when is_bitstring(did) do
+    cond do
+      is_nadp?(did)       -> :nadp
+      is_shortcode?(did)  -> :nadp
+      is_usintl?(did)     -> :international
+      is_intl?(did)       -> :international
+      is_n11?(did)        -> :n11
+      true                -> :unknown
+    end
+  end
+
+  # determine the format of the supplied did
+  @spec format(did :: bitstring()) :: atom()
+  defp format(did) when is_bitstring(did) do
+    cond do
+      is_n11?(did)        -> :n11
+      is_e164?(did)       -> :e164
+      is_npan?(did)       -> :npan
+      is_1npan?(did)      -> :one_npan
+      is_shortcode?(did)  -> :shortcode
+      is_usintl?(did)     -> :us_intl
+      true                -> :unknown
+    end
+  end
+
+  # determine tollable state for this did
+  @spec tollstate(did :: bitstring()) :: atom()
+  defp tollstate(did) when is_bitstring(did) do
+    cond do
+      is_tollfree?(did)                 -> :tollfree_us
+      is_shortcode?(did)                -> :shortcode
+      is_n11?(did)                      -> :emergency
+      is_nadp?(did)                     -> :us_toll
+      is_usintl?(did) or is_intl?(did)  -> :international
+      true                              -> :unkown
+    end
+  end
 end

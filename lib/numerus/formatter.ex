@@ -82,7 +82,7 @@ defmodule Numerus.Formatter do
     end
   end
 
-  def normalize(_,_), do: {:error, :invalid_format}
+  def normalize(_, _), do: {:error, :invalid_format}
 
   def normalize(did) when is_bitstring(did) do
     case Classifier.classify(did) do
@@ -112,7 +112,7 @@ defmodule Numerus.Formatter do
               {:ok, result} ->
                 "+1 (#{result["area_code"]}) #{result["exch"]} #{result["number"]}"
             end
-          :world  ->
+          :international  ->
             case Classifier.extract(did) do
               {:error, _}   -> did
               {:ok, result} ->
@@ -157,7 +157,7 @@ defmodule Numerus.Formatter do
     case Classifier.classify(did) do
       {:ok, %{"region" => region, "format" => format}} ->
         case region do
-          :world ->
+          :international ->
             # npan is exclusively for NADP regions
             :error
           :nadp ->
@@ -186,7 +186,7 @@ defmodule Numerus.Formatter do
     case Classifier.classify(did) do
       {:ok, %{"region" => region, "format" => format}} ->
         case region do
-          :world ->
+          :international ->
             # npan is exclusively for NADP regions
             :error
           :nadp ->
@@ -216,7 +216,7 @@ defmodule Numerus.Formatter do
       {:ok, %{"region" => region, "format" => format}} ->
         case region do
           :nadp   -> :error
-          :world  ->
+          :international  ->
             case format do
               :us_intl  -> did
               :e164     -> String.replace(did, ~r/\+/, "011")
