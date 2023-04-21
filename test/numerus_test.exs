@@ -41,6 +41,12 @@ defmodule NumerusTest do
     "18005551212",
     "8885551212"
   ]
+  @premium_dids   [
+    "+19005551212",
+    "19005551212",
+    "9005551212"
+  ]
+
   @garbage_data   [nil, "randomstr", 1923, 0.0449]
 
   test "e164 match test" do
@@ -90,6 +96,31 @@ defmodule NumerusTest do
     |> Enum.each(fn x ->
       assert Numerus.Classifier.is_tollfree?(x) == true
     end)
+  end
+
+  test "premium rate number match" do
+    @premium_dids
+    |> Enum.each(fn x ->
+      assert Numerus.Classifier.is_premium?(x) == true
+    end)
+  end
+
+  test "split and format nadp numbers" do
+    did1 = "2063130566"
+    did2 = "12063130566"
+    did3 = "+12063130566"
+    did4 = "+96824560742"
+    did5 = "98765"
+    did6 = "711"
+    nadp = "+1 (206) 313 0566"
+    intl = "+968 24560742"
+
+    assert Numerus.Formatter.format(did1) == nadp
+    assert Numerus.Formatter.format(did2) == nadp
+    assert Numerus.Formatter.format(did3) == nadp
+    assert Numerus.Formatter.format(did4) == intl
+    assert Numerus.Formatter.format(did5) == did5
+    assert Numerus.Formatter.format(did6) == did6
   end
 
   test "Lookup country from cache" do

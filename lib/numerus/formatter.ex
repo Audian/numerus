@@ -71,14 +71,15 @@ defmodule Numerus.Formatter do
         # return the did, if not, then return an error as this conversion is
         # not possible.
         case Classifier.classify(did) do
-          {:ok, %{"region" => _, "format" => format}} ->
-            case format do
-              :shortcode  -> did
-              :n11        -> did
-              _           -> {:error, :invalid_format}
+          {:ok, result} ->
+            case result["format"] do
+              n when n in ["shortcode", "n11"]  -> did
+              _ -> {:error, :invalid_format}
             end
+          _ -> {:error, :invalid_format}
         end
-        _ -> {:error, :invalid_format}
+
+      _ -> {:error, :invalid_format}
     end
   end
 
@@ -86,12 +87,12 @@ defmodule Numerus.Formatter do
 
   def normalize(did) when is_bitstring(did) do
     case Classifier.classify(did) do
-      {:ok, %{"region" => _, "format" => format}} ->
-        if format == :shortcode or format == :n11 do
-          did
-        else
-          normalize(did, @normal_format)
+      {:ok, result} ->
+        case result["format"] do
+          n when n in ["shortcode", "n11"] -> did
+          _ -> normalize(did, @normal_format)
         end
+
       _ -> {:error, :invalid_format}
     end
   end
@@ -104,43 +105,60 @@ defmodule Numerus.Formatter do
   @spec format(did :: bitstring()) :: bitstring() | {:error, :invalid_format}
   def format(did) when is_bitstring(did) do
     case Classifier.classify(did) do
-      {:ok, %{"region" => region, "format" => _}} ->
-        case region do
-          :nadp   ->
-            case Classifier.split(did) do
-              {:error, _}   -> did
-              {:ok, result} ->
-                "+1 (#{result["area_code"]}) #{result["exch"]} #{result["number"]}"
+      {:error, _} -> did
+      {:ok, data} ->
+        case data["region"] do
+          "unknown"       -> did
+          "international" -> format(did, "international")
+          "nadp"          ->
+            # return the did for shortcodes and n11
+            case data["format"] do
+              n when n in ["e164", "npan", "one_npan"] -> format(did, "nadp")
+              _ -> did
             end
-          :international  ->
-            case Classifier.extract(did) do
-              {:error, _}   -> did
-              {:ok, result} ->
-                # we have a country code and did
-                "+#{result["countrycode"]} #{result["number"]}"
-            end
+          _ -> did
         end
+    end
+  end
+
+  def format(_), do: {:error, :invalid_format}
+
+  @spec format(did :: bitstring(), region :: bitstring()) :: bitstring()
+  def format(did, region) when is_bitstring(did) and is_bitstring(region) do
+    case region do
+      "nadp"  ->
+        case Classifier.split(did) do
+          {:error, _}   -> did
+          {:ok, split}  -> "+1 (#{split["area_code"]}) #{split["exch"]} #{split["number"]}"
+        end
+
+      "international" ->
+        case Classifier.extract(did) do
+          {:error, _}   -> did
+          {:ok, split}  -> "+#{split["countrycode"]} #{split["number"]}"
+        end
+
       _ -> did
     end
   end
-  def format(_), do: {:error, :invalid_format}
 
   # -- convert functions -- #
 
   @doc """
   Convert the supplied did to E.164
   """
-  @spec to_e164(did :: bitstring()) :: bitstring() | {:error, :invalid_format}
+  @spec to_e164(did :: bitstring()) :: bitstring() | :error
   def to_e164(did) when is_bitstring(did) do
     case Classifier.classify(did) do
       {:ok, %{"region" => _, "format" => format}} ->
         case format do
-          :e164       -> did
-          :one_npan   -> "+#{did}"
-          :npan       -> "+1#{did}"
-          :us_intl    -> String.replace(did, ~r/^011/, "+")
+          "e164"      -> did
+          "one_npan"  -> "+#{did}"
+          "npan"      -> "+1#{did}"
+          "us_intl"   -> String.replace(did, ~r/^011/, "+")
           _           -> {:error, :invalid_format}
         end
+
       _ ->
         # we do not convert other formats, so just return an error.
         :error
@@ -152,31 +170,31 @@ defmodule Numerus.Formatter do
   @doc """
   Convert the supplied did to npan
   """
-  @spec to_npan(did :: bitstring()) :: bitstring() | {:error, :invalid_format}
+  @spec to_npan(did :: bitstring()) :: bitstring() | :error
   def to_npan(did) when is_bitstring(did) do
     case Classifier.classify(did) do
       {:ok, %{"region" => region, "format" => format}} ->
         case region do
-          :international ->
+          "international" ->
             # npan is exclusively for NADP regions
             :error
-          :nadp ->
+          "nadp" ->
             # nadp numbers can be converted to npan or 1npan
             case format do
-              :e164     -> String.replace(did, ~r/\+1/, "")
-              :one_npan -> String.replace(did, ~r/^1/,  "")
-              :npan     -> did
-              _         -> {:error, :invalid_format}
+              "e164"      -> String.replace(did, ~r/\+1/, "")
+              "one_npan"  -> String.replace(did, ~r/^1/,  "")
+              "npan"      -> did
+              _           -> :error
             end
 
-          _ -> {:error, :invalid_format}
+          _ -> :error
         end
       _ ->
         # we do not convert other regions. just return an error.
         :error
     end
   end
-  def to_npan(_), do: {:error, :invalid_format}
+  def to_npan(_), do: :error
 
   @doc """
   Convert the supplied did to 1npan
@@ -186,16 +204,16 @@ defmodule Numerus.Formatter do
     case Classifier.classify(did) do
       {:ok, %{"region" => region, "format" => format}} ->
         case region do
-          :international ->
+          "international" ->
             # npan is exclusively for NADP regions
             :error
-          :nadp ->
+          "nadp" ->
             # nadp numbers can be converted to npan or 1npan
             case format do
-              :e164     -> String.replace(did, ~r/\+/, "")
-              :one_npan -> did
-              :npan     -> "1#{did}"
-              _         -> {:error, :invalid_format}
+              "e164"      -> String.replace(did, ~r/\+/, "")
+              "one_npan"  -> did
+              "npan"      -> "1#{did}"
+              _           -> {:error, :invalid_format}
             end
 
           _ -> {:error, :invalid_format}
@@ -215,11 +233,11 @@ defmodule Numerus.Formatter do
     case Classifier.classify(did) do
       {:ok, %{"region" => region, "format" => format}} ->
         case region do
-          :nadp   -> :error
-          :international  ->
+          "nadp"          -> :error
+          "international" ->
             case format do
-              :us_intl  -> did
-              :e164     -> String.replace(did, ~r/\+/, "011")
+              "us_intl" -> did
+              "e164"    -> String.replace(did, ~r/\+/, "011")
               _         -> {:error, :invalid_format}
             end
           _ -> {:error, :invalid_format}

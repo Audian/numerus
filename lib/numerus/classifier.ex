@@ -42,6 +42,7 @@ defmodule Numerus.Classifier do
   @intl_n   ~r/\A^(?:011|\+)[2-9][0-9]{5,16}$\z/
   @scode    ~r/\A^[2-9][\d]{4,5}\z/
   @natf     ~r/\A(?:(?:\+1|1))?(?:800|888|877|866|855|844|833)[2-9][0-9]{2}[0-9]{4}\z/
+  @naprem   ~r/\A(?:(?:\+1|1))?(?:900)[2-9][0-9]{2}[0-9]{4}\z/
 
   # define regexes for format types
   @e164     ~r/\A^\+[1-9][0-9][0-9]{8,13}$\z/
@@ -179,6 +180,15 @@ defmodule Numerus.Classifier do
   end
   def is_usintl?(_), do: false
 
+  @doc """
+  Returns true if the number is a US premium rate number such as 900 and 976
+  """
+  @spec is_premium?(did :: bitstring()) :: boolean()
+  def is_premium?(did) when is_bitstring(did) do
+    String.match?(did, @naprem)
+  end
+  def is_premium?(_), do: false
+
   # -- did parsers -- #
   @doc """
   Split and extract the number into its country code and telephone number.
@@ -311,42 +321,43 @@ defmodule Numerus.Classifier do
   # -- private functions -- #
 
   # determine region for the supplied did
-  @spec region(did :: bitstring()) :: atom()
+  @spec region(did :: bitstring()) :: bitstring()
   defp region(did) when is_bitstring(did) do
     cond do
-      is_nadp?(did)       -> :nadp
-      is_shortcode?(did)  -> :nadp
-      is_usintl?(did)     -> :international
-      is_intl?(did)       -> :international
-      is_n11?(did)        -> :n11
-      true                -> :unknown
+      is_nadp?(did)       -> "nadp"
+      is_shortcode?(did)  -> "nadp"
+      is_usintl?(did)     -> "international"
+      is_intl?(did)       -> "international"
+      is_n11?(did)        -> "n11"
+      true                -> "unknown"
     end
   end
 
   # determine the format of the supplied did
-  @spec format(did :: bitstring()) :: atom()
+  @spec format(did :: bitstring()) :: bitstring()
   defp format(did) when is_bitstring(did) do
     cond do
-      is_n11?(did)        -> :n11
-      is_e164?(did)       -> :e164
-      is_npan?(did)       -> :npan
-      is_1npan?(did)      -> :one_npan
-      is_shortcode?(did)  -> :shortcode
-      is_usintl?(did)     -> :us_intl
-      true                -> :unknown
+      is_n11?(did)        -> "n11"
+      is_e164?(did)       -> "e164"
+      is_npan?(did)       -> "npan"
+      is_1npan?(did)      -> "one_npan"
+      is_shortcode?(did)  -> "shortcode"
+      is_usintl?(did)     -> "us_intl"
+      true                -> "unknown"
     end
   end
 
   # determine tollable state for this did
-  @spec tollstate(did :: bitstring()) :: atom()
+  @spec tollstate(did :: bitstring()) :: bitstring()
   defp tollstate(did) when is_bitstring(did) do
     cond do
-      is_tollfree?(did)                 -> :tollfree_us
-      is_shortcode?(did)                -> :shortcode
-      is_n11?(did)                      -> :emergency
-      is_nadp?(did)                     -> :us_toll
-      is_usintl?(did) or is_intl?(did)  -> :international
-      true                              -> :unkown
+      is_tollfree?(did)                 -> "tollfree"
+      is_shortcode?(did)                -> "shortcode"
+      is_n11?(did)                      -> "emergency"
+      is_premium?(did)                  -> "premium"
+      is_nadp?(did)                     -> "standard"
+      is_usintl?(did) or is_intl?(did)  -> "international"
+      true                              -> "unknown"
     end
   end
 end
