@@ -75,4 +75,34 @@ defmodule Numerus do
   @doc "Return true if the supplied number is a us short code."
   @spec is_shortcode?(did :: bitstring()) :: boolean()
   def is_shortcode?(did), do: Classifier.is_shortcode?(did)
+
+  @doc "Normalize the DID"
+  @spec normalize(did :: bitstring() | integer()) :: bitstring() | :error
+  def normalize(did) when is_bitstring(did) do
+    Numerus.Formatter.normalize(did)
+  end
+  def normalize(did) when is_integer(did) do
+    normalize("#{did}")
+  end
+  def normalize(_), do: :error
+
+  @doc "Classify the DID"
+  @spec classify(did :: bitstring() | integer()) :: {:ok, map()} | {:error, term()}
+  def classify(did) when is_bitstring(did) do
+    Numerus.Classifier.classify(did)
+  end
+  def classify(did) when is_integer(did) do
+    classify("#{did}")
+  end
+  def classify(_), do: {:error, :invalid_did}
+
+  @doc "Return metadata for the number"
+  @spec metadata(did :: bitstring() | integer()) :: {:ok, map()} | {:error, term()}
+  def metadata(did) when is_bitstring(did) do
+    Numerus.Classifier.metadata(did)
+  end
+  def metadata(did) when is_integer(did) do
+    metadata("#{did}")
+  end
+  def metadata(_), do: {:error, :invalid_did}
 end

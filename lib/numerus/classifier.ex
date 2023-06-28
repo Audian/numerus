@@ -207,7 +207,7 @@ defmodule Numerus.Classifier do
   """
   @spec extract(did :: bitstring()) :: {:ok, map()} | {:error, term()}
   def extract(did) when is_bitstring(did) do
-    case Regex.named_captures(@parser, did) do
+    case Regex.named_captures(@parser, Numerus.normalize(did)) do
       nil -> {:error, :invalid_number_format}
       res -> {:ok, res}
     end
@@ -277,6 +277,7 @@ defmodule Numerus.Classifier do
                         result =
                           %{
                             "did"       => did,
+                            "normalized"=> Numerus.normalize(did),
                             "formatted" => Formatter.format(did),
                             "meta"      => %{
                               "country" => %{
@@ -299,6 +300,7 @@ defmodule Numerus.Classifier do
                     result =
                       %{
                         "did"       => did,
+                        "normalized"=> Numerus.normalize(did),
                         "formatted" => Formatter.format(did),
                         "meta"      => %{
                           "country" => %{
