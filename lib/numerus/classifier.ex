@@ -272,13 +272,39 @@ defmodule Numerus.Classifier do
                   {:error, _} -> {:error, :invalid_number}
                   {:ok, number} ->
                     case Numerus.Nadp.metadata(number["area_code"]) do
-                      {:error, _} -> {:error, :invalid_number}
+                      {:error, _} ->
+                        # check to see if this number is tollfree
+                        case Numerus.is_tollfree?(did) do
+                          false ->  {:error, :invalid_number}
+                          true  ->
+                            result  =
+                              %{
+                                  "did"       => did,
+                                  "normalized"=> Numerus.normalize(did),
+                                  "formatted" => Formatter.format(did),
+                                  "tollstate" => tollstate(did),
+                                  "region"    => region(did),
+                                  "meta"      => %{
+                                    "country" => %{
+                                      "name"  => "",
+                                      "iso"   => ""
+                                    },
+                                    "state"   => %{
+                                      "name"  => "",
+                                      "iso"   => ""
+                                    }
+                                  }
+                                }
+                            {:ok, result}
+                        end
                       {:ok, meta} ->
                         result =
                           %{
                             "did"       => did,
                             "normalized"=> Numerus.normalize(did),
                             "formatted" => Formatter.format(did),
+                            "tollstate" => tollstate(did),
+                            "region"    => region(did),
                             "meta"      => %{
                               "country" => %{
                                 "name"  => meta["country_name"],
@@ -302,6 +328,8 @@ defmodule Numerus.Classifier do
                         "did"       => did,
                         "normalized"=> Numerus.normalize(did),
                         "formatted" => Formatter.format(did),
+                        "tollstate" => tollstate(did),
+                        "region"    => region(did),
                         "meta"      => %{
                           "country" => %{
                             "name"  => meta["name"],
@@ -313,7 +341,49 @@ defmodule Numerus.Classifier do
                     {:ok, result}
                 end
             end
-          {:error, _} -> {:error, :invalid_number}
+          {:error, _} ->
+              # maybe this is an emergency or service number
+              case Enum.member?(service_dids(), did) do
+                true  ->
+                  result =
+                    %{
+                      "did"           => did,
+                      "normalized"    => did,
+                      "formatted"     => did,
+                      "tollstate"     => tollstate(did),
+                      "region"        => region(did),
+                      "meta"          => %{
+                        "country" => %{
+                          "name"  => "UNITED STATES",
+                          "iso"   => "US"
+                        },
+                        "state"   => %{}
+                      }
+                    }
+
+                  {:ok, result}
+                false -> case Numerus.is_shortcode?(did) do
+                  true  ->
+                    result =
+                      %{
+                        "did"           => did,
+                        "normalized"    => did,
+                        "formatted"     => did,
+                        "tollstate"     => tollstate(did),
+                        "region"        => region(did),
+                        "meta"          => %{
+                          "country" => %{
+                            "name"  => "UNITED STATES",
+                            "iso"   => "US"
+                          },
+                          "state"   => %{}
+                        }
+                      }
+                    {:ok, result}
+
+                  false -> {:error, :invalid_number}
+                end
+              end
         end
       {:error, :invalid_number} -> {:error, :invalid_number}
     end
@@ -361,5 +431,12 @@ defmodule Numerus.Classifier do
       is_usintl?(did) or is_intl?(did)  -> "international"
       true                              -> "unknown"
     end
+  end
+
+  # return a list of service dids
+  @spec service_dids() :: list()
+  def service_dids() do
+    @n11_dids
+    |> Enum.map(fn {k, _} -> k end)
   end
 end

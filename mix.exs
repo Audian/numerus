@@ -26,7 +26,7 @@ defmodule Numerus.MixProject do
   def project do
     [
       app: :numerus,
-      version: "0.3.0",
+      version: "0.3.1",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -52,9 +52,9 @@ defmodule Numerus.MixProject do
       {:jason,    "~> 1.0"},
       {:csv,      "~> 3.0"},
       {:cachex,   "~> 3.2"},
-      {:ex_doc,   "~> 0.27",  [only: :dev, runtime: false]},
-      {:credo,    "~> 1.6",   [only: :dev, runtime: false]},
-      {:dialyxir, "~> 1.2",   [only: :dev, runtime: false]}
+      {:ex_doc,   "~> 0.31",  [only: :dev, runtime: false]},
+      {:credo,    "~> 1.7",   [only: :dev, runtime: false]},
+      {:dialyxir, "~> 1.4",   [only: :dev, runtime: false]}
     ]
   end
 end
