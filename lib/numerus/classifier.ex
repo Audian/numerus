@@ -207,9 +207,13 @@ defmodule Numerus.Classifier do
   """
   @spec extract(did :: bitstring()) :: {:ok, map()} | {:error, term()}
   def extract(did) when is_bitstring(did) do
-    case Regex.named_captures(@parser, Numerus.normalize(did)) do
-      nil -> {:error, :invalid_number_format}
-      res -> {:ok, res}
+    case String.match?(did, @parser) do
+      true  ->
+        case Regex.named_captures(@parser, Numerus.normalize(did)) do
+          nil -> {:error, :invalid_number_format}
+          res -> {:ok, res}
+        end
+      false -> {:error, :invalid_number_format}
     end
   end
 
