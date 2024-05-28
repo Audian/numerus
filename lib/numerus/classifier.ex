@@ -265,29 +265,35 @@ defmodule Numerus.Classifier do
   """
   @spec metadata(did :: bitstring()) :: {:ok, map()} | {:error, term()}
   def metadata(did) when is_bitstring(did) do
-    case classify(did) do
+    # some trunking customers send out bs caller id such as using
+    # 011 instead of + while attempting to send an E164 caller id
+    #
+    # Lets just convert all leading 011 to + just to be sure
+    ndid = String.replace(did, ~r/^011/, "+")
+
+    case classify(ndid) do
       {:ok, _} ->
-        case extract(did) do
+        case extract(ndid) do
           {:ok, extracted} ->
             case extracted["countrycode"] do
               "1" ->
                 # this is a north american number under the NADP
-                case split(did) do
+                case split(ndid) do
                   {:error, _} -> {:error, :invalid_number}
                   {:ok, number} ->
                     case Numerus.Nadp.metadata(number["area_code"]) do
                       {:error, _} ->
                         # check to see if this number is tollfree
-                        case Numerus.is_tollfree?(did) do
+                        case Numerus.is_tollfree?(ndid) do
                           false ->  {:error, :invalid_number}
                           true  ->
                             result  =
                               %{
-                                  "did"       => did,
-                                  "normalized"=> Numerus.normalize(did),
-                                  "formatted" => Formatter.format(did),
-                                  "tollstate" => tollstate(did),
-                                  "region"    => region(did),
+                                  "did"       => ndid,
+                                  "normalized"=> Numerus.normalize(ndid),
+                                  "formatted" => Formatter.format(ndid),
+                                  "tollstate" => tollstate(ndid),
+                                  "region"    => region(ndid),
                                   "meta"      => %{
                                     "country" => %{
                                       "name"  => "",
@@ -304,11 +310,11 @@ defmodule Numerus.Classifier do
                       {:ok, meta} ->
                         result =
                           %{
-                            "did"       => did,
-                            "normalized"=> Numerus.normalize(did),
-                            "formatted" => Formatter.format(did),
-                            "tollstate" => tollstate(did),
-                            "region"    => region(did),
+                            "did"       => ndid,
+                            "normalized"=> Numerus.normalize(ndid),
+                            "formatted" => Formatter.format(ndid),
+                            "tollstate" => tollstate(ndid),
+                            "region"    => region(ndid),
                             "meta"      => %{
                               "country" => %{
                                 "name"  => meta["country_name"],
@@ -329,11 +335,11 @@ defmodule Numerus.Classifier do
                   {:ok, meta} ->
                     result =
                       %{
-                        "did"       => did,
-                        "normalized"=> Numerus.normalize(did),
-                        "formatted" => Formatter.format(did),
-                        "tollstate" => tollstate(did),
-                        "region"    => region(did),
+                        "did"       => ndid,
+                        "normalized"=> Numerus.normalize(ndid),
+                        "formatted" => Formatter.format(ndid),
+                        "tollstate" => tollstate(ndid),
+                        "region"    => region(ndid),
                         "meta"      => %{
                           "country" => %{
                             "name"  => meta["name"],
@@ -347,15 +353,15 @@ defmodule Numerus.Classifier do
             end
           {:error, _} ->
               # maybe this is an emergency or service number
-              case Enum.member?(service_dids(), did) do
+              case Enum.member?(service_dids(), ndid) do
                 true  ->
                   result =
                     %{
-                      "did"           => did,
-                      "normalized"    => did,
-                      "formatted"     => did,
-                      "tollstate"     => tollstate(did),
-                      "region"        => region(did),
+                      "did"           => ndid,
+                      "normalized"    => ndid,
+                      "formatted"     => ndid,
+                      "tollstate"     => tollstate(ndid),
+                      "region"        => region(ndid),
                       "meta"          => %{
                         "country" => %{
                           "name"  => "UNITED STATES",
@@ -366,15 +372,15 @@ defmodule Numerus.Classifier do
                     }
 
                   {:ok, result}
-                false -> case Numerus.is_shortcode?(did) do
+                false -> case Numerus.is_shortcode?(ndid) do
                   true  ->
                     result =
                       %{
-                        "did"           => did,
-                        "normalized"    => did,
-                        "formatted"     => did,
-                        "tollstate"     => tollstate(did),
-                        "region"        => region(did),
+                        "did"           => ndid,
+                        "normalized"    => ndid,
+                        "formatted"     => ndid,
+                        "tollstate"     => tollstate(ndid),
+                        "region"        => region(ndid),
                         "meta"          => %{
                           "country" => %{
                             "name"  => "UNITED STATES",
