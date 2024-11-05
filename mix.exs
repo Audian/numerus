@@ -26,7 +26,7 @@ defmodule Numerus.MixProject do
   def project do
     [
       app: :numerus,
-      version: "0.4.2",
+      version: "0.4.3",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
