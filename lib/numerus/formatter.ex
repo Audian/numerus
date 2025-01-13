@@ -57,33 +57,21 @@ defmodule Numerus.Formatter do
   ```
 
   iex> Numerus.Formatter.normalize("98655", :e164)
-  {:error, :invalid_format}
+  :error
   """
-  @spec normalize(did :: bitstring, format :: atom() | nil) :: bitstring() | {:error, :invalid_format}
+  @spec normalize(did :: bitstring, format :: atom() | nil) :: bitstring() | :error
   def normalize(did, format) when is_bitstring(did) and is_atom(format) do
     case format do
       :e164       -> to_e164(did)
       :npan       -> to_npan(did)
       :one_npan   -> to_1npan(did)
       :us_intl    -> to_usintl(did)
-      :shortcode  ->
-        # we need to verify that the supplied number is a shortcode. If so,
-        # return the did, if not, then return an error as this conversion is
-        # not possible.
-        case Classifier.classify(did) do
-          {:ok, result} ->
-            case result["format"] do
-              n when n in ["shortcode", "n11"]  -> did
-              _ -> {:error, :invalid_format}
-            end
-          _ -> {:error, :invalid_format}
-        end
-
-      _ -> {:error, :invalid_format}
+      :shortcode  -> did
+      _           -> did
     end
   end
 
-  def normalize(_, _), do: {:error, :invalid_format}
+  def normalize(_, _), do: :error
 
   def normalize(did) when is_bitstring(did) do
     case Classifier.classify(did) do
@@ -93,16 +81,16 @@ defmodule Numerus.Formatter do
           _ -> normalize(did, @normal_format)
         end
 
-      _ -> {:error, :invalid_format}
+      _ -> :error
     end
   end
-  def normalize(_), do: {:error, :invalid_format}
+  def normalize(_), do: :error
 
   @doc """
   Pretty format a telephone number. For NADP numbers. Other numbers will
   be returned with the country code separated from the main number.
   """
-  @spec format(did :: bitstring()) :: bitstring() | {:error, :invalid_format}
+  @spec format(did :: bitstring()) :: bitstring() | :error
   def format(did) when is_bitstring(did) do
     case Classifier.classify(did) do
       {:error, _} -> did
@@ -121,7 +109,7 @@ defmodule Numerus.Formatter do
     end
   end
 
-  def format(_), do: {:error, :invalid_format}
+  def format(_), do: :error
 
   @spec format(did :: bitstring(), region :: bitstring()) :: bitstring()
   def format(did, region) when is_bitstring(did) and is_bitstring(region) do
@@ -156,7 +144,7 @@ defmodule Numerus.Formatter do
           "one_npan"  -> "+#{did}"
           "npan"      -> "+1#{did}"
           "us_intl"   -> String.replace(did, ~r/^011/, "+")
-          _           -> {:error, :invalid_format}
+          _           -> :error
         end
 
       _ ->
@@ -199,7 +187,7 @@ defmodule Numerus.Formatter do
   @doc """
   Convert the supplied did to 1npan
   """
-  @spec to_1npan(did :: bitstring()) :: bitstring() | {:error, :invalid_format}
+  @spec to_1npan(did :: bitstring()) :: bitstring() | :error
   def to_1npan(did) when is_bitstring(did) do
     case Classifier.classify(did) do
       {:ok, %{"region" => region, "format" => format}} ->
@@ -213,17 +201,17 @@ defmodule Numerus.Formatter do
               "e164"      -> String.replace(did, ~r/\+/, "")
               "one_npan"  -> did
               "npan"      -> "1#{did}"
-              _           -> {:error, :invalid_format}
+              _           -> :error
             end
 
-          _ -> {:error, :invalid_format}
+          _ -> :error
         end
       _ ->
         # we do not convert other regions. just return an error.
         :error
     end
   end
-  def to_1npan(_), do: {:error, :invalid_format}
+  def to_1npan(_), do: :error
 
   @doc """
   Convert the supplied did to us intl format.
@@ -238,13 +226,13 @@ defmodule Numerus.Formatter do
             case format do
               "us_intl" -> did
               "e164"    -> String.replace(did, ~r/\+/, "011")
-              _         -> {:error, :invalid_format}
+              _         -> :error
             end
-          _ -> {:error, :invalid_format}
+          _ -> :error
         end
     end
   end
-  def to_usintl(_), do: {:error, :invalid_format}
+  def to_usintl(_), do: :error
 
   # -- format  functions -- #
 end
