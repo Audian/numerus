@@ -108,10 +108,9 @@ defmodule Numerus.Formatter do
         end
     end
   end
-
   def format(_), do: :error
 
-  @spec format(did :: bitstring(), region :: bitstring()) :: bitstring()
+  @spec format(did :: bitstring(), region :: bitstring()) :: bitstring() | :error
   def format(did, region) when is_bitstring(did) and is_bitstring(region) do
     case region do
       "nadp"  ->
@@ -129,6 +128,7 @@ defmodule Numerus.Formatter do
       _ -> did
     end
   end
+  def format(_, _), do: :error
 
   # -- convert functions -- #
 
@@ -233,6 +233,4 @@ defmodule Numerus.Formatter do
     end
   end
   def to_usintl(_), do: :error
-
-  # -- format  functions -- #
 end
