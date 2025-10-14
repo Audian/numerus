@@ -55,7 +55,7 @@ defmodule Numerus.MixProject do
 
       # code quality, static checks and documentation
       {:dialyxir,     "~> 1.4",   [only: :dev, runtime: false]},
-      {:credo,        "~> 1.6",   [only: :dev, runtime: false]},
+      {:credo,        "~> 1.7",   [only: :dev, runtime: false]},
       {:ex_doc,       "~> 0.38",  [only: :dev, runtime: false]},
       {:sobelow,      "~> 0.14",  [only: :dev, runtime: false]},
       {:mix_audit,    "~> 2.1",   [only: :dev, runtime: false]},
