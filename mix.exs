@@ -26,7 +26,7 @@ defmodule Numerus.MixProject do
   def project do
     [
       app: :numerus,
-      version: "0.5.0",
+      version: "0.5.1",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -49,13 +49,19 @@ defmodule Numerus.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:jason,    "~> 1.0"},
-      {:csv,      "~> 3.0"},
-      {:cachex,   "~> 4.1"},
+      {:jason,        "~> 1.0"},
+      {:csv,          "~> 3.0"},
+      {:cachex,       "~> 4.1"},
 
-      {:ex_doc,   "~> 0.31",  [only: :dev, runtime: false]},
-      {:credo,    "~> 1.7",   [only: :dev, runtime: false]},
-      {:dialyxir, "~> 1.4",   [only: :dev, runtime: false]}
+      # code quality, static checks and documentation
+      {:dialyxir,     "~> 1.4",   [only: :dev, runtime: false]},
+      {:credo,        "~> 1.7",   [only: :dev, runtime: false]},
+      {:ex_doc,       "~> 0.38",  [only: :dev, runtime: false]},
+      {:sobelow,      "~> 0.14",  [only: :dev, runtime: false]},
+      {:mix_audit,    "~> 2.1",   [only: :dev, runtime: false]},
+
+      # set yaml_elixir to 2.11 since it prefers 1.18
+      {:yaml_elixir,  "~> 2.11",  [only: :dev, override: true]}
     ]
   end
 end
