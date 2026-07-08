@@ -31,6 +31,12 @@ defmodule Numerus.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       name: "Numerus",
+      # keep the Dialyzer PLTs in a stable local dir (not the volatile _build)
+      # so they can be cached across CI runs
+      dialyzer: [
+        plt_local_path: "priv/plts",
+        plt_core_path:  "priv/plts"
+      ],
       docs: [
         main: "Numerus",
         extras: ["README.md"]
@@ -54,14 +60,15 @@ defmodule Numerus.MixProject do
       {:cachex,       "~> 4.1"},
 
       # code quality, static checks and documentation
-      {:dialyxir,     "~> 1.4",   [only: :dev, runtime: false]},
-      {:credo,        "~> 1.7",   [only: :dev, runtime: false]},
-      {:ex_doc,       "~> 0.38",  [only: :dev, runtime: false]},
-      {:sobelow,      "~> 0.14",  [only: :dev, runtime: false]},
-      {:mix_audit,    "~> 2.1",   [only: :dev, runtime: false]},
+      {:dialyxir,     "~> 1.4",   [only: [:dev, :test], runtime: false]},
+      {:credo,        "~> 1.7",   [only: [:dev, :test], runtime: false]},
+      {:ex_doc,       "~> 0.38",  [only: [:dev, :test], runtime: false]},
+      {:sobelow,      "~> 0.14",  [only: [:dev, :test], runtime: false]},
+      {:mix_audit,    "~> 2.1",   [only: [:dev, :test], runtime: false]},
 
       # set yaml_elixir to 2.11 since it prefers 1.18
-      {:yaml_elixir,  "~> 2.11",  [only: :dev, override: true]}
+      # (:test too — mix_audit parses advisory files via YamlElixir at runtime)
+      {:yaml_elixir,  "~> 2.11",  [only: [:dev, :test], override: true]}
     ]
   end
 end
