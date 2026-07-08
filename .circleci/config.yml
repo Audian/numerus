@@ -14,11 +14,10 @@ jobs:
             - v1-build-{{ checksum "mix.lock" }}
             - v1-build-
       - run: mix deps.get
-      - run: mix deps.compile
-      - run: mix deps.audit
-      - run: mix sobelow --config .sobelow-conf
-      # build the PLT separately so it is cached even when the analysis
-      # step below fails with findings
+      # compile with warnings-as-errors on a cold tree so changed files are
+      # actually checked before dialyzer --plt warms the build
+      - run: mix compile --warnings-as-errors
+      # build the PLT separately so it is cached even when the gate below fails
       - run: mix dialyzer --plt
       - save_cache:
           key: v1-build-{{ checksum "mix.lock" }}
@@ -27,8 +26,10 @@ jobs:
             - _build
             - priv/plts
             - ~/.mix
-      - run: mix dialyzer
-      - run: mix test
+      # authoritative gate — mirrors `mix precommit` locally:
+      # deps.audit, compile --warnings-as-errors, deps.unlock --check-unused,
+      # credo, sobelow, dialyzer, test (all in MIX_ENV=test)
+      - run: mix precommit
 workflows:
   test:
     jobs:
