@@ -53,28 +53,28 @@ defmodule Numerus do
   # -- interface functions  -- #
 
   @doc "Return true if the supplied did is E.164 formatted."
-  @spec is_e164?(did :: bitstring()) :: boolean()
-  def is_e164?(did), do: Classifier.is_e164?(did)
+  @spec e164?(did :: bitstring()) :: boolean()
+  def e164?(did), do: Classifier.e164?(did)
 
   @doc "Return true if the supplied did is NPAN formatted."
-  @spec is_npan?(did :: bitstring()) :: boolean()
-  def is_npan?(did), do: Classifier.is_npan?(did)
+  @spec npan?(did :: bitstring()) :: boolean()
+  def npan?(did), do: Classifier.npan?(did)
 
   @doc "Return true if the supplied did is 1NPAN formatted."
-  @spec is_1npan?(did :: bitstring()) :: boolean()
-  def is_1npan?(did), do: Classifier.is_1npan?(did)
+  @spec one_npan?(did :: bitstring()) :: boolean()
+  def one_npan?(did), do: Classifier.one_npan?(did)
 
   @doc "Return true if the supplied did is a tollfree number"
-  @spec is_tollfree?(did :: bitstring()) :: boolean()
-  def is_tollfree?(did), do: Classifier.is_tollfree?(did)
+  @spec tollfree?(did :: bitstring()) :: boolean()
+  def tollfree?(did), do: Classifier.tollfree?(did)
 
   @doc "Return true if the supplied did belongs to the NADP"
-  @spec is_nadp?(did :: bitstring()) :: boolean()
-  def is_nadp?(did), do: Classifier.is_nadp?(did)
+  @spec nadp?(did :: bitstring()) :: boolean()
+  def nadp?(did), do: Classifier.nadp?(did)
 
   @doc "Return true if the supplied number is a us short code."
-  @spec is_shortcode?(did :: bitstring()) :: boolean()
-  def is_shortcode?(did), do: Classifier.is_shortcode?(did)
+  @spec shortcode?(did :: bitstring()) :: boolean()
+  def shortcode?(did), do: Classifier.shortcode?(did)
 
   @doc "Normalize the DID"
   @spec normalize(did :: bitstring() | integer()) :: bitstring() | :error
