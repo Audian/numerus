@@ -71,8 +71,8 @@ defmodule Numerus.Cache do
       {:error, :not_found}  -> {:ok, :deleted}
       {:ok, _}  ->
         case Cachex.del(table, key) do
-          {:ok, _}    -> {:ok, :deleted}
-          {:error, _} -> {:error, :delete_failure}
+          {:ok, _}          -> {:ok, :deleted}
+          {:error, _} = err -> err
         end
       {:error, _} = err -> err
     end

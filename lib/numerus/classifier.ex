@@ -94,7 +94,7 @@ defmodule Numerus.Classifier do
   def n11?(did) when is_bitstring(did), do: String.match?(did, @n11)
   def n11?(_), do: false
 
-  @doc "Return trye if the number is formatted E164"
+  @doc "Return true if the number is formatted E164."
   @spec e164?(did :: bitstring()) :: boolean()
   def e164?(did) when is_bitstring(did), do: String.match?(did, @e164)
   def e164?(_), do: false
@@ -116,7 +116,7 @@ defmodule Numerus.Classifier do
   def npan?(did) when is_bitstring(did), do: String.match?(did, @npan)
   def npan?(_), do: false
 
-  @doc "Return true of the did is formatted 1npan"
+  @doc "Return true if the did is formatted 1npan."
   @spec one_npan?(did :: bitstring()) :: boolean()
   def one_npan?(did) when is_bitstring(did), do: String.match?(did, @one_npan)
   def one_npan?(_), do: false
@@ -142,7 +142,7 @@ defmodule Numerus.Classifier do
   def usintl?(_), do: false
 
   @doc "Return true if the number matches a premium did (i.e very high ppm)"
-  @spec premium?(did :: bitstring()) :: boolean
+  @spec premium?(did :: bitstring()) :: boolean()
   def premium?(did) when is_bitstring(did), do: String.match?(did, @naprem)
   def premium?(_), do: false
 
@@ -206,7 +206,12 @@ defmodule Numerus.Classifier do
       "n11"       -> {:ok, basic_metadata(did, us_meta())}
       "us_intl"   -> country_metadata(did)
       "e164"      -> e164_metadata(did)
-      n when n in ["npan", "one_npan"] -> metadata(Numerus.normalize(did))
+      n when n in ["npan", "one_npan"] ->
+        # normalize to e164 for the lookup, but echo the caller's did back
+        case metadata(Numerus.normalize(did)) do
+          {:ok, result} -> {:ok, %{result | "did" => did}}
+          error         -> error
+        end
       _           -> {:error, :invalid_number_format}
     end
   end

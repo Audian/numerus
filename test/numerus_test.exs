@@ -105,6 +105,15 @@ defmodule NumerusTest do
     end)
   end
 
+  test "public predicate wrappers delegate to the classifier" do
+    assert Numerus.e164?("+12065551212")
+    assert Numerus.npan?("2065551212")
+    assert Numerus.one_npan?("12065551212")
+    assert Numerus.tollfree?("+18005551212")
+    assert Numerus.nadp?("+12065551212")
+    assert Numerus.shortcode?("98765")
+  end
+
   test "split and format nadp numbers" do
     did1 = "2063130566"
     did2 = "12063130566"
