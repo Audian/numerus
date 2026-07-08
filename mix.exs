@@ -26,16 +26,29 @@ defmodule Numerus.MixProject do
   def project do
     [
       app: :numerus,
-      version: "0.5.2",
+      version: "0.6.0",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
+      aliases: aliases(),
       deps: deps(),
       name: "Numerus",
+      # keep the Dialyzer PLTs in a stable local dir (not the volatile _build)
+      # so they can be cached across CI runs
+      dialyzer: [
+        plt_local_path: "priv/plts",
+        plt_core_path:  "priv/plts"
+      ],
       docs: [
         main: "Numerus",
         extras: ["README.md"]
       ]
     ]
+  end
+
+  # Run the precommit alias in MIX_ENV=test so its `test` step (and the
+  # quality tools, which are available in :dev and :test) run in one env.
+  def cli do
+    [preferred_envs: [precommit: :test]]
   end
 
   # Run "mix help compile.app" to learn about applications.
@@ -54,14 +67,39 @@ defmodule Numerus.MixProject do
       {:cachex,       "~> 4.1"},
 
       # code quality, static checks and documentation
-      {:dialyxir,     "~> 1.4",   [only: :dev, runtime: false]},
-      {:credo,        "~> 1.7",   [only: :dev, runtime: false]},
-      {:ex_doc,       "~> 0.38",  [only: :dev, runtime: false]},
-      {:sobelow,      "~> 0.14",  [only: :dev, runtime: false]},
-      {:mix_audit,    "~> 2.1",   [only: :dev, runtime: false]},
+      # only needed in dev and test environments.
+      {:dialyxir,     "~> 1.4",   [only: [:dev, :test], runtime: false]},
+      {:credo,        "~> 1.7",   [only: [:dev, :test], runtime: false]},
+      {:ex_doc,       "~> 0.38",  [only: [:dev, :test], runtime: false]},
+      {:sobelow,      "~> 0.14",  [only: [:dev, :test], runtime: false]},
+      {:mix_audit,    "~> 2.1",   [only: [:dev, :test], runtime: false]},
+      {:yaml_elixir,  "~> 2.11",  [only: [:dev, :test], override: true]}
+    ]
+  end
 
-      # set yaml_elixir to 2.11 since it prefers 1.18
-      {:yaml_elixir,  "~> 2.11",  [only: :dev, override: true]}
+  # Run "mix help aliases" to learn about aliases.
+  defp aliases do
+    [
+      # Pre-commit gate: run the same checks CI runs, in order, and fail on
+      # any drift instead of silently rewriting files. Run with `mix precommit`.
+      precommit: [
+        # `mix_audit` checks mix.lock against the security-advisories DB;
+        # a stale tree with a new CVE fails here and forces `mix deps.update`.
+        "deps.audit",
+        # treat compiler warnings as errors to be fixed
+        "compile --warnings-as-errors",
+        # validation-only: fail on unused lock entries rather than mutating
+        # mix.lock (unlike the default `deps.unlock --unused`).
+        "deps.unlock --check-unused",
+        # refactoring / consistency findings across the codebase
+        "credo",
+        # exit code gated by the `exit:` level in .sobelow-conf
+        "sobelow --config .sobelow-conf",
+        # typespec / pattern-match contradictions; PLTs live under priv/plts
+        "dialyzer",
+        # runs in :test via preferred_envs above (see cli/0)
+        "test"
+      ]
     ]
   end
 end

@@ -59,20 +59,22 @@ defmodule Numerus.Cache do
   @spec get(table :: atom(), key :: bitstring() | atom()) :: {:ok, any()} | {:error, term()}
   def get(table, key) do
     case Cachex.get(table, key) do
-      {:ok, nil}  -> {:error, :not_found}
-      {:ok, res}  -> {:ok, res}
+      {:ok, nil}        -> {:error, :not_found}
+      {:ok, res}        -> {:ok, res}
+      {:error, _} = err -> err
     end
   end
 
   @spec del(table :: atom(), key :: bitstring() | atom()) :: {:ok, any()} | {:error, term()}
   def del(table, key) do
-    case Cachex.get(table, key) do
+    case get(table, key) do
       {:error, :not_found}  -> {:ok, :deleted}
       {:ok, _}  ->
         case Cachex.del(table, key) do
-          {:ok, _}    -> {:ok, :deleted}
-          {:error, _} -> {:error, :delete_failure}
+          {:ok, _}          -> {:ok, :deleted}
+          {:error, _} = err -> err
         end
+      {:error, _} = err -> err
     end
   end
 end

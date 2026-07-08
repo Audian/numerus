@@ -52,57 +52,66 @@ defmodule NumerusTest do
   test "e164 match test" do
     @e164_dids
     |> Enum.each(fn x ->
-      assert Numerus.Classifier.is_e164?(x) == true
+      assert Numerus.Classifier.e164?(x) == true
     end)
   end
 
   test "e164 non match test" do
     @npan_dids ++ @one_npan_dids
     |> Enum.each(fn x ->
-      assert Numerus.Classifier.is_e164?(x) == false
+      assert Numerus.Classifier.e164?(x) == false
     end)
   end
 
   test "npan match test" do
     @npan_dids
     |> Enum.each(fn x ->
-      assert Numerus.Classifier.is_npan?(x) == true
+      assert Numerus.Classifier.npan?(x) == true
     end)
   end
 
   test "npan non match test" do
     @e164_dids ++ @one_npan_dids
     |> Enum.each(fn x ->
-      assert Numerus.Classifier.is_npan?(x) == false
+      assert Numerus.Classifier.npan?(x) == false
     end)
   end
 
   test "one npan match test" do
     @one_npan_dids
     |> Enum.each(fn x ->
-      assert Numerus.Classifier.is_1npan?(x) == true
+      assert Numerus.Classifier.one_npan?(x) == true
     end)
   end
 
   test "one npan non match test" do
     @npan_dids ++ @e164_dids
     |> Enum.each(fn x ->
-      assert Numerus.Classifier.is_1npan?(x) == false
+      assert Numerus.Classifier.one_npan?(x) == false
     end)
   end
 
   test "tollfree number match" do
     @tollfree_dids
     |> Enum.each(fn x ->
-      assert Numerus.Classifier.is_tollfree?(x) == true
+      assert Numerus.Classifier.tollfree?(x) == true
     end)
   end
 
   test "premium rate number match" do
     @premium_dids
     |> Enum.each(fn x ->
-      assert Numerus.Classifier.is_premium?(x) == true
+      assert Numerus.Classifier.premium?(x) == true
     end)
+  end
+
+  test "public predicate wrappers delegate to the classifier" do
+    assert Numerus.e164?("+12065551212")
+    assert Numerus.npan?("2065551212")
+    assert Numerus.one_npan?("12065551212")
+    assert Numerus.tollfree?("+18005551212")
+    assert Numerus.nadp?("+12065551212")
+    assert Numerus.shortcode?("98765")
   end
 
   test "split and format nadp numbers" do

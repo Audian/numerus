@@ -90,66 +90,66 @@ defmodule Numerus.Classifier do
   # -- did classification functions -- #
 
   @doc "Return true if the did is an N11 did."
-  @spec is_n11?(did :: bitstring()) :: boolean()
-  def is_n11?(did) when is_bitstring(did), do: String.match?(did, @n11)
-  def is_n11?(_), do: false
+  @spec n11?(did :: bitstring()) :: boolean()
+  def n11?(did) when is_bitstring(did), do: String.match?(did, @n11)
+  def n11?(_), do: false
 
-  @doc "Return trye if the number is formatted E164"
-  @spec is_e164?(did :: bitstring()) :: boolean()
-  def is_e164?(did) when is_bitstring(did), do: String.match?(did, @e164)
-  def is_e164?(_), do: false
+  @doc "Return true if the number is formatted E164."
+  @spec e164?(did :: bitstring()) :: boolean()
+  def e164?(did) when is_bitstring(did), do: String.match?(did, @e164)
+  def e164?(_), do: false
 
   @doc "Return true if the number is part of NADP"
-  @spec is_nadp?(did :: bitstring()) :: boolean()
-  def is_nadp?(did) when is_bitstring(did), do: String.match?(did, @nadp)
-  def is_nadp?(_), do: false
+  @spec nadp?(did :: bitstring()) :: boolean()
+  def nadp?(did) when is_bitstring(did), do: String.match?(did, @nadp)
+  def nadp?(_), do: false
 
   @doc "Return true if the number is formatted E164 and is part of NADP"
-  @spec is_use164?(did :: bitstring()) :: boolean()
-  def is_use164?(did) when is_bitstring(did), do: is_nadp?(did) and is_e164?(did)
-  def is_use164?(_), do: false
-  def is_nadpe164?(did) when is_bitstring(did), do: is_use164?(did)
-  def is_nadpe164?(_), do: false
+  @spec use164?(did :: bitstring()) :: boolean()
+  def use164?(did) when is_bitstring(did), do: nadp?(did) and e164?(did)
+  def use164?(_), do: false
+  def nadpe164?(did) when is_bitstring(did), do: use164?(did)
+  def nadpe164?(_), do: false
 
   @doc "Return true if the did is formatted npan"
-  @spec is_npan?(did :: bitstring()) :: boolean()
-  def is_npan?(did) when is_bitstring(did), do: String.match?(did, @npan)
-  def is_npan?(_), do: false
+  @spec npan?(did :: bitstring()) :: boolean()
+  def npan?(did) when is_bitstring(did), do: String.match?(did, @npan)
+  def npan?(_), do: false
 
-  @doc "Return true of the did is formatted 1npan"
-  @spec is_1npan?(did :: bitstring()) :: boolean()
-  def is_1npan?(did) when is_bitstring(did), do: String.match?(did, @one_npan)
-  def is_1npan?(_), do: false
+  @doc "Return true if the did is formatted 1npan."
+  @spec one_npan?(did :: bitstring()) :: boolean()
+  def one_npan?(did) when is_bitstring(did), do: String.match?(did, @one_npan)
+  def one_npan?(_), do: false
 
   @doc "Return true if the number is a toll free number"
-  @spec is_tollfree?(did :: bitstring()) :: boolean()
-  def is_tollfree?(did) when is_bitstring(did), do: is_nadp?(did) && String.match?(did, @natf)
-  def is_tollfree?(_), do: false
+  @spec tollfree?(did :: bitstring()) :: boolean()
+  def tollfree?(did) when is_bitstring(did), do: nadp?(did) && String.match?(did, @natf)
+  def tollfree?(_), do: false
 
   @doc "Return true if the number is a shortcode"
-  @spec is_shortcode?(did :: bitstring()) :: boolean()
-  def is_shortcode?(did) when is_bitstring(did), do: String.match?(did, @scode)
-  def is_shortcode?(_), do: false
+  @spec shortcode?(did :: bitstring()) :: boolean()
+  def shortcode?(did) when is_bitstring(did), do: String.match?(did, @scode)
+  def shortcode?(_), do: false
 
   @doc "Return true if the number is not part of the NADP or if the number is not from US or Canada"
-  @spec is_intl?(did :: bitstring()) :: boolean()
-  def is_intl?(did) when is_bitstring(did), do: String.match?(did, @intl) or is_usintl?(did)
-  def is_intl?(_), do: false
+  @spec intl?(did :: bitstring()) :: boolean()
+  def intl?(did) when is_bitstring(did), do: String.match?(did, @intl) or usintl?(did)
+  def intl?(_), do: false
 
   @doc "Return true if the number is formatted as US international (i.e 011XXXXX etc)"
-  @spec is_usintl?(did :: bitstring()) :: boolean()
-  def is_usintl?(did) when is_bitstring(did), do: String.match?(did, @intl_n)
-  def is_usintl?(_), do: false
+  @spec usintl?(did :: bitstring()) :: boolean()
+  def usintl?(did) when is_bitstring(did), do: String.match?(did, @intl_n)
+  def usintl?(_), do: false
 
   @doc "Return true if the number matches a premium did (i.e very high ppm)"
-  @spec is_premium?(did :: bitstring()) :: boolean
-  def is_premium?(did) when is_bitstring(did), do: String.match?(did, @naprem)
-  def is_premium?(_), do: false
+  @spec premium?(did :: bitstring()) :: boolean()
+  def premium?(did) when is_bitstring(did), do: String.match?(did, @naprem)
+  def premium?(_), do: false
 
   @doc "extract the number and country code from the did for n11 dids, always return 1 for the country code"
   @spec extract(did :: bitstring()) :: {:ok, map()} | {:error, term()}
   def extract(did) when is_bitstring(did) do
-    case is_n11?(did) do
+    case n11?(did) do
       true  -> {:ok, %{"countrycode" => "1", "number" => did}}
       false ->
         # this is not an emergency did, so lets extract
@@ -199,211 +199,133 @@ defmodule Numerus.Classifier do
   @doc "Return metadata for the supplied number"
   @spec metadata(did :: bitstring()) :: {:ok, map()} | {:error, term()}
   def metadata(did) when is_bitstring(did) do
-    # lets determine the format for this did
+    # dispatch on the detected format; each helper returns {:ok, map} | {:error, term}
     case format(did) do
-      "unknown" ->
-        # this pattern does not match other known patterns. return a map
-        # with the did but blank vals for other options
-        result = %{
-          "did"         => did,
-          "normalized"  => did,
-          "formatted"   => did,
-          "tollstate"   => tollstate(did),
-          "region"      => region(did),
-          "meta"        => %{}
-        }
-
-        {:ok, result}
-
-      "shortcode" ->
-        # this is a shortcode, we only support shortcodes in the us
-        # and return a country code of 1
-        result = %{
-          "did"         => did,
-          "normalized"  => did,
-          "formatted"   => did,
-          "tollstate"   => tollstate(did),
-          "region"      => region(did),
-          "meta"        => %{
-            "country" => %{"name" => "UNITED STATES", "iso" => "US"},
-            "state"   => %{}
-          }
-        }
-
-        {:ok, result}
-
-      "n11" ->
-        # N11 dids can be emergency or multiple services, ensure
-        # service_did_info(did) is called for the tollstate
-        result = %{
-          "did"         => did,
-          "normalized"  => did,
-          "formatted"   => did,
-          "tollstate"   => tollstate(did),
-          "region"      => region(did),
-          "meta"        => %{
-            "country" => %{"name" => "UNITED STATES", "iso" => "US"},
-            "state"   => %{}
-          }
-        }
-
-        {:ok, result}
-
-      "us_intl" ->
-        # lets extract the country code and return the metadata
-        case extract(did) do
-          {:error, _} -> {:error, :invalid_number_format}
-          {:ok, meta} ->
-            {name, iso} =
-              case Numerus.Country.metadata(meta["countrycode"]) do
-                {:ok, res}  -> {res["name"], res["iso"]}
-                {:error, _} -> {nil, nil}
-              end
-
-            result = %{
-              "did"           => did,
-              "normalized"    => normalize(did),
-              "formatted"     => Formatter.format(did),
-              "tollstate"     => tollstate(did),
-              "region"        => region(did),
-              "meta"          => %{
-                "country" => %{"name" => name, "iso" => iso},
-                "state"   => %{}
-              }
-            }
-
-            {:ok, result}
+      "unknown"   -> {:ok, basic_metadata(did, %{})}
+      "shortcode" -> {:ok, basic_metadata(did, us_meta())}
+      "n11"       -> {:ok, basic_metadata(did, us_meta())}
+      "us_intl"   -> country_metadata(did)
+      "e164"      -> e164_metadata(did)
+      n when n in ["npan", "one_npan"] ->
+        # normalize to e164 for the lookup, but echo the caller's did back
+        case metadata(Numerus.normalize(did)) do
+          {:ok, result} -> {:ok, %{result | "did" => did}}
+          error         -> error
         end
-
-      "e164"  ->
-        # e164 can be tollfree, us, canada (which are considered local) and
-        # caribbean countries
-        case is_tollfree?(did) do
-          true  ->
-            # these toll free numbers are us only for our purposes
-            # though they can be from any nadp country
-            result = %{
-              "did"         => did,
-              "normalized"  => normalize(did),
-              "formatted"   => Formatter.format(did),
-              "tollstate"   => tollstate(did),
-              "region"      => region(did),
-              "meta"        => %{
-                "country" => %{"name" => "UNITED STATES", "iso" => "US"},
-                "state"   => %{}
-              }
-            }
-
-            {:ok, result}
-          false ->
-            # these can be international or nadp
-            case is_intl?(did) do
-              true  ->
-                # international did, parse the country code
-                case extract(did) do
-                  {:error, _} -> {:error, :invalid_number_format}
-                  {:ok, meta} ->
-                    {name, iso} = case Numerus.Country.metadata(meta["countrycode"]) do
-                      {:error, _} -> {nil, nil}
-                      {:ok, res}  -> {res["name"], res["iso"]}
-                    end
-
-                    result = %{
-                      "did"         => did,
-                      "normalized"  => normalize(did),
-                      "formatted"   => Formatter.format(did),
-                      "tollstate"   => tollstate(did),
-                      "region"      => region(did),
-                      "meta"        => %{
-                        "country" => %{"name" => name, "iso" => iso},
-                        "state"   => %{}
-                      }
-                    }
-
-                    {:ok, result}
-                end
-
-              false ->
-                # this can be caribbean which should be tagged as international
-                case is_nadp?(did) do
-                  false -> {:error, :invalid_number_format}
-                  true  ->
-                    case Regex.named_captures(@nadp, did) do
-                      nil -> {:error, :invalid_number_format}
-                      res ->
-                        case Numerus.Nadp.metadata(res["area_code"]) do
-                          {:error, _} ->
-                            result = %{
-                              "did"         => did,
-                              "normalized"  => normalize(did),
-                              "formatted"   => Formatter.format(did),
-                              "tollstate"   => tollstate(did),
-                              "region"      => region(did),
-                              "meta"        => %{}
-                            }
-
-                            {:ok, result}
-
-                          {:ok, res} ->
-                            result =
-                              case Enum.member?(["US", "CA"], res["country_iso"]) do
-                                false ->
-                                  %{
-                                    "did"         => did,
-                                    "normalized"  => normalize(did),
-                                    "formatted"   => Formatter.format(did),
-                                    "tollstate"   => tollstate(did),
-                                    "region"      => region(did),
-                                    "meta"        => %{
-                                      "country" => %{
-                                        "name"  => res["country_name"],
-                                        "iso" => res["country_iso"]
-                                      },
-                                      "state"   => %{}
-                                    }
-                                  }
-                                true  ->
-                                  %{
-                                    "did"         => did,
-                                    "normalized"  => normalize(did),
-                                    "formatted"   => Formatter.format(did),
-                                    "tollstate"   => tollstate(did),
-                                    "region"      => region(did),
-                                    "meta"        => %{
-                                      "country" => %{
-                                        "name"  => res["country_name"],
-                                        "iso"   => res["country_iso"]
-                                      },
-                                      "state"   => %{
-                                        "name"  => res["state_name"],
-                                        "iso"   => res["state_iso"]
-                                      }
-                                    }
-                                  }
-                              end
-                            {:ok, result}
-                        end
-                    end
-                end
-            end
-        end
-      n when n in ["npan", "one_npan"]  -> metadata(Numerus.normalize(did))
-      _ -> {:error, :invalid_number_format}
+      _           -> {:error, :invalid_number_format}
     end
   end
   def metadata(_), do: {:error, :invalid_number_format}
 
   # -- private functions -- #
 
+  # -- metadata helpers -- #
+
+  # standard result map that uses the raw did for the normalized/formatted
+  # values (for formats already in their canonical form: unknown/shortcode/n11)
+  @spec basic_metadata(did :: bitstring(), meta :: map()) :: map()
+  defp basic_metadata(did, meta) do
+    %{
+      "did"         => did,
+      "normalized"  => did,
+      "formatted"   => did,
+      "tollstate"   => tollstate(did),
+      "region"      => region(did),
+      "meta"        => meta
+    }
+  end
+
+  # standard result map that normalizes and formats the did
+  @spec full_metadata(did :: bitstring(), meta :: map()) :: map()
+  defp full_metadata(did, meta) do
+    %{
+      "did"         => did,
+      "normalized"  => normalize(did),
+      "formatted"   => Formatter.format(did),
+      "tollstate"   => tollstate(did),
+      "region"      => region(did),
+      "meta"        => meta
+    }
+  end
+
+  # the US country meta block used for shortcodes, n11 and tollfree dids
+  @spec us_meta() :: map()
+  defp us_meta do
+    %{
+      "country" => %{"name" => "UNITED STATES", "iso" => "US"},
+      "state"   => %{}
+    }
+  end
+
+  # look up a country by dial code, returning {name, iso} (or {nil, nil})
+  @spec country_name_iso(countrycode :: bitstring()) ::
+          {bitstring() | nil, bitstring() | nil}
+  defp country_name_iso(countrycode) do
+    case Numerus.Country.metadata(countrycode) do
+      {:ok, res}  -> {res["name"], res["iso"]}
+      {:error, _} -> {nil, nil}
+    end
+  end
+
+  # metadata for an international did: extract the country code and look it up
+  @spec country_metadata(did :: bitstring()) :: {:ok, map()} | {:error, term()}
+  defp country_metadata(did) do
+    case extract(did) do
+      {:error, _} -> {:error, :invalid_number_format}
+      {:ok, meta} ->
+        {name, iso} = country_name_iso(meta["countrycode"])
+        country = %{"country" => %{"name" => name, "iso" => iso}, "state" => %{}}
+        {:ok, full_metadata(did, country)}
+    end
+  end
+
+  # metadata for an e164 did: tollfree (US), international, or a NADP number
+  @spec e164_metadata(did :: bitstring()) :: {:ok, map()} | {:error, term()}
+  defp e164_metadata(did) do
+    cond do
+      tollfree?(did)  -> {:ok, full_metadata(did, us_meta())}
+      intl?(did)      -> country_metadata(did)
+      nadp?(did)      -> nadp_metadata(did)
+      true            -> {:error, :invalid_number_format}
+    end
+  end
+
+  # metadata for a NADP e164 did (US/CA carry state info, caribbean does not)
+  @spec nadp_metadata(did :: bitstring()) :: {:ok, map()} | {:error, term()}
+  defp nadp_metadata(did) do
+    case Regex.named_captures(@nadp, did) do
+      nil -> {:error, :invalid_number_format}
+      res ->
+        case Numerus.Nadp.metadata(res["area_code"]) do
+          {:error, _} -> {:ok, full_metadata(did, %{})}
+          {:ok, area} -> {:ok, full_metadata(did, nadp_meta(area))}
+        end
+    end
+  end
+
+  # build the country/state meta for a NADP area-code lookup result
+  @spec nadp_meta(area :: map()) :: map()
+  defp nadp_meta(area) do
+    country = %{"name" => area["country_name"], "iso" => area["country_iso"]}
+
+    state =
+      case Enum.member?(["US", "CA"], area["country_iso"]) do
+        true  -> %{"name" => area["state_name"], "iso" => area["state_iso"]}
+        false -> %{}
+      end
+
+    %{"country" => country, "state" => state}
+  end
+
   # return the region for the did
   @spec region(did :: bitstring()) :: bitstring()
   defp region(did) when is_bitstring(did) do
     cond do
-      is_n11?(did)        -> "nadp"
-      is_nadp?(did)       -> "nadp"
-      is_shortcode?(did)  -> "nadp"
-      is_usintl?(did)     -> "international"
-      is_intl?(did)       -> "international"
+      n11?(did)        -> "nadp"
+      nadp?(did)       -> "nadp"
+      shortcode?(did)  -> "nadp"
+      usintl?(did)     -> "international"
+      intl?(did)       -> "international"
       true                -> "unknown"
     end
   end
@@ -412,12 +334,12 @@ defmodule Numerus.Classifier do
   @spec format(did :: bitstring()) :: bitstring()
   def format(did) when is_bitstring(did) do
     cond do
-      is_n11?(did)        -> "n11"
-      is_e164?(did)       -> "e164"
-      is_npan?(did)       -> "npan"
-      is_1npan?(did)      -> "one_npan"
-      is_shortcode?(did)  -> "shortcode"
-      is_usintl?(did)     -> "us_intl"
+      n11?(did)        -> "n11"
+      e164?(did)       -> "e164"
+      npan?(did)       -> "npan"
+      one_npan?(did)      -> "one_npan"
+      shortcode?(did)  -> "shortcode"
+      usintl?(did)     -> "us_intl"
       true                -> "unknown"
     end
   end
@@ -427,13 +349,13 @@ defmodule Numerus.Classifier do
   @spec tollstate(did :: bitstring()) :: bitstring()
   defp tollstate(did) when is_bitstring(did) do
     cond do
-      is_tollfree?(did)   -> "tollfree"
-      is_shortcode?(did)  -> "shortcode"
-      is_n11?(did)        -> service_did_info(did)
-      is_premium?(did)    -> "premium"
-      is_nadp?(did)       -> "standard"
-      is_usintl?(did)     -> "international"
-      is_intl?(did)       -> "international"
+      tollfree?(did)   -> "tollfree"
+      shortcode?(did)  -> "shortcode"
+      n11?(did)        -> service_did_info(did)
+      premium?(did)    -> "premium"
+      nadp?(did)       -> "standard"
+      usintl?(did)     -> "international"
+      intl?(did)       -> "international"
       true                -> "unknown"
     end
   end

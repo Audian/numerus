@@ -1,15 +1,35 @@
 version: 2.1
 jobs:
   build:
+    environment:
+      MIX_ENV: test
     docker:
       - image: cimg/elixir:1.18.4-erlang-26.2.1
     steps:
       - checkout
+      # cache key: bump the v1 prefix when the docker image (Elixir/OTP) changes;
+      # the PLTs live under priv/plts (see mix.exs) and are keyed to mix.lock
+      - restore_cache:
+          keys:
+            - v1-build-{{ checksum "mix.lock" }}
+            - v1-build-
       - run: mix deps.get
-      - run: mix deps.compile
-      - run: mix deps.audit
-      - run: mix sobelow --config .sobelow-conf
-      - run: mix dialyzer
+      # compile with warnings-as-errors on a cold tree so changed files are
+      # actually checked before dialyzer --plt warms the build
+      - run: mix compile --warnings-as-errors
+      # build the PLT separately so it is cached even when the gate below fails
+      - run: mix dialyzer --plt
+      - save_cache:
+          key: v1-build-{{ checksum "mix.lock" }}
+          paths:
+            - deps
+            - _build
+            - priv/plts
+            - ~/.mix
+      # authoritative gate — mirrors `mix precommit` locally:
+      # deps.audit, compile --warnings-as-errors, deps.unlock --check-unused,
+      # credo, sobelow, dialyzer, test (all in MIX_ENV=test)
+      - run: mix precommit
 workflows:
   test:
     jobs:
