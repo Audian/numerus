@@ -26,7 +26,7 @@ defmodule Numerus.MixProject do
   def project do
     [
       app: :numerus,
-      version: "0.7.0",
+      version: "0.7.1",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -70,8 +70,8 @@ defmodule Numerus.MixProject do
       # only needed in dev and test environments.
       {:dialyxir,     "~> 1.4",   [only: [:dev, :test], runtime: false]},
       {:credo,        "~> 1.7",   [only: [:dev, :test], runtime: false]},
-      {:ex_doc,       "~> 0.38",  [only: [:dev, :test], runtime: false]},
-      {:sobelow,      "~> 0.14",  [only: [:dev, :test], runtime: false]},
+      {:ex_doc,       "~> 0.40",  [only: [:dev, :test], runtime: false]},
+      {:sobelow,      "~> 0.18",  [only: [:dev, :test], runtime: false]},
       {:mix_audit,    "~> 2.1",   [only: [:dev, :test], runtime: false]},
       {:yaml_elixir,  "~> 2.11",  [only: [:dev, :test], override: true]}
     ]
@@ -93,8 +93,9 @@ defmodule Numerus.MixProject do
         "deps.unlock --check-unused",
         # refactoring / consistency findings across the codebase
         "credo",
-        # exit code gated by the `exit:` level in .sobelow-conf
-        "sobelow --config .sobelow-conf",
+        # reads .sobelow-conf from the project root (`--config` is a boolean
+        # flag in sobelow >= 0.18); exit code gated by its `exit:` level
+        "sobelow --config",
         # typespec / pattern-match contradictions; PLTs live under priv/plts
         "dialyzer",
         # runs in :test via preferred_envs above (see cli/0)
