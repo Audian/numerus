@@ -131,8 +131,12 @@ def country_examples(meta_path, npas):
 
 
 def main(meta_path, geo_path):
-    os.makedirs(FIXTURES, exist_ok=True)
+    # build and validate both datasets before touching either fixture, so a
+    # failure leaves the existing fixtures intact rather than half-updated
     npas = area_codes(geo_path)
+    examples = sorted(country_examples(meta_path, npas))
+
+    os.makedirs(FIXTURES, exist_ok=True)
 
     with open(os.path.join(FIXTURES, "reference_area_codes.csv"), "w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
@@ -143,8 +147,7 @@ def main(meta_path, geo_path):
     with open(os.path.join(FIXTURES, "reference_country_codes.csv"), "w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
         w.writerow(["region", "kind", "number", "country_iso", "state_iso"])
-        for row in sorted(country_examples(meta_path, npas)):
-            w.writerow(row)
+        w.writerows(examples)
 
 
 if __name__ == "__main__":
