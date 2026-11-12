@@ -72,17 +72,34 @@ defmodule Numerus.Country do
       true  ->
         Logger.info("Loading data from country.csv")
 
-        data =
-          datasource
-          |> File.stream!()
-          |> CSV.decode!(headers: true)
-          |> Enum.map(&remap/1)
-
-        {:ok, data}
+        datasource
+        |> File.stream!()
+        |> CSV.decode!(headers: true)
+        |> Enum.reject(&(&1["phonecode"] in ["", "0"]))
+        |> Enum.group_by(& &1["phonecode"])
+        |> Enum.reduce_while({:ok, []}, fn {phonecode, rows}, {:ok, acc} ->
+          case main_row(rows) do
+            {:ok, row} -> {:cont, {:ok, [remap(row) | acc]}}
+            :error     ->
+              Logger.error("country.csv: phonecode #{phonecode} needs exactly one main_for_code row")
+              {:halt, {:error, {:ambiguous_phonecode, phonecode}}}
+          end
+        end)
     end
   end
 
   # -- private functions -- #
+
+  # A dial code shared by several countries (e.g. +44 GB/GG/JE/IM) can only
+  # return one of them; the CSV marks that one with main_for_code=true.
+  @spec main_row(rows :: [map()]) :: {:ok, map()} | :error
+  defp main_row([row]), do: {:ok, row}
+  defp main_row(rows) do
+    case Enum.filter(rows, &(&1["main_for_code"] == "true")) do
+      [row] -> {:ok, row}
+      _     -> :error
+    end
+  end
 
   @spec remap(map :: map()) :: tuple()
   defp remap(map) when is_map(map) do
